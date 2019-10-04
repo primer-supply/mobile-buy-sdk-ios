@@ -32,6 +32,7 @@ extension Storefront.PaymentQuery {
     func fragmentForPayment() -> Storefront.PaymentQuery { return self
         .id()
         .ready()
+        .nextActionUrl()
         .test()
         .amountV2 { $0
             .amount()
