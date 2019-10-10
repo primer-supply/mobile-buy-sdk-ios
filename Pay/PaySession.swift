@@ -181,18 +181,55 @@ public class PaySession: NSObject {
     //  MARK: - Payment Creation -
     //
     func paymentRequestUsing(_ checkout: PayCheckout, currency: PayCurrency, merchantID: String) -> PKPaymentRequest {
-        let request                           = PKPaymentRequest()
-        request.countryCode                   = currency.countryCode
-        request.currencyCode                  = currency.currencyCode
-        request.merchantIdentifier            = merchantID
-        request.requiredBillingAddressFields  = .all
-        request.requiredShippingAddressFields = .all
-        request.supportedNetworks             = self.acceptedCardBrands.paymentNetworks
-        request.merchantCapabilities          = [.capability3DS]
-        request.paymentSummaryItems           = checkout.summaryItems(for: self.shopName)
+         print("in paymentRequestUsing")
 
-        return request
-    }
+         let request                           = PKPaymentRequest()
+         request.countryCode                   = currency.countryCode
+         request.currencyCode                  = currency.currencyCode
+         request.merchantIdentifier            = merchantID
+         request.requiredBillingAddressFields  = .all
+         request.requiredShippingAddressFields = .all
+         request.supportedNetworks             = self.acceptedCardBrands.paymentNetworks
+         request.merchantCapabilities          = [.capability3DS]
+         request.paymentSummaryItems           = checkout.summaryItems(for: self.shopName)
+
+         if let dict = UserDefaults.standard.object(forKey: "addressDictionary") as? [String: String] {
+             let contact = PKContact()
+             var name = PersonNameComponents()
+             name.givenName = dict["firstName"]
+             name.familyName = dict["lastName"]
+             contact.name = name
+             contact.emailAddress = dict["email"]
+
+             guard
+                 let address1 = dict["address1"],
+                 let city = dict["city"],
+                 let state = dict["state"],
+                 let zip = dict["zip"]
+             else {
+                 print("address unpack failed")
+                 return request
+             }
+
+             let address = CNMutablePostalAddress()
+             if let address2 = dict["address2"] {
+                 address.street = address1 + " " + address2
+             } else {
+                 address.street = address1
+             }
+             address.city = city
+             address.state = state
+             address.postalCode = zip
+             address.country = "USA"
+             address.isoCountryCode = "840"
+             contact.postalAddress = address
+
+             print("request.shippingContact set")
+             request.shippingContact = contact
+         }
+
+         return request
+     }
 }
 
 // ------------------------------------------------------
